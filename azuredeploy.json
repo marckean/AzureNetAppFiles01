@@ -1,0 +1,96 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "volName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "serviceLevel": {
+            "type": "string"
+        },
+        "usageThreshold": {
+            "type": "int"
+        },
+        "creationToken": {
+            "type": "string"
+        },
+        "snapshotId": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "subnetId": {
+            "type": "string"
+        },
+        "protocolTypes": {
+            "type": "array"
+        }
+    },
+    "variables": {
+        "apiVersion": "2019-05-01"
+    },
+    "resources": [
+        {
+            "name": "[parameters('volName')]",
+            "dependsOn": [
+                "Microsoft.Network/virtualNetworks/NetAppFiles-vnet"
+            ],
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.NetApp/netAppAccounts/capacityPools/volumes",
+            "location": "[parameters('location')]",
+            "properties": {
+                "serviceLevel": "[parameters('serviceLevel')]",
+                "usageThreshold": "[parameters('usageThreshold')]",
+                "creationToken": "[parameters('creationToken')]",
+                "snapshotId": "[parameters('snapshotId')]",
+                "subnetId": "[parameters('subnetId')]",
+                "protocolTypes": "[parameters('protocolTypes')]",
+                "exportPolicy": {
+                    "rules": [
+                        {
+                            "allowedClients": "0.0.0.0/0",
+                            "nfsv3": true,
+                            "nfsv4": false,
+                            "ruleIndex": 1,
+                            "unixReadOnly": false,
+                            "unixReadWrite": true
+                        }
+                    ]
+                }
+            },
+            "tags": {}
+        },
+        {
+            "name": "NetAppFiles-vnet",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-07-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.1.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "addressPrefix": "10.1.1.0/28",
+                            "delegations": [
+                                {
+                                    "name": "NetAppDelegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.NetApp/volumes"
+                                    }
+                                }
+                            ],
+                            "purpose": "BareMetalServerCreation"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
